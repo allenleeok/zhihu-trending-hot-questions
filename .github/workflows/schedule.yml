@@ -1,31 +1,41 @@
-name: schedule
+name: Scheduled Deno Script
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "0 8 * * *"  # 北京时间每天 8:00（UTC 0:00）
+  workflow_dispatch:     # 手动触发选项
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     env:
-      TZ: Asia/Shanghai
+      TZ: Asia/Shanghai  # 时区设置
 
     steps:
       - name: Clone repository
         uses: actions/checkout@v3
 
-      - name: Install deno
+      - name: Install Deno
         uses: denoland/setup-deno@v1
+        with:
+          deno-version: "1.40.x"
 
-      - name: Run deno
+      - name: Run Deno Script
         run: |
           git config --local user.email "bot@github.com"
           git config --local user.name "bot"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase
+          
+          # 执行 Deno 脚本
           deno run --unstable --allow-net --allow-read --allow-write --import-map=import_map.json mod.ts
           deno fmt
-          git add .
-          git commit -m "update by github action"
-          git push -f
+          
+          # 仅当有变更时提交
+          if git diff --quiet --exit-code; then
+            echo "No changes detected."
+          else
+            git add .
+            git commit -m "Auto-update by GitHub Actions"
+            git push
+          fi
