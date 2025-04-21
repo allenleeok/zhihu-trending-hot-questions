@@ -20,7 +20,7 @@ const result: HotList = await response.json();
 
 const questions: Question[] = result.data.map((x) => ({
   title: x.target.title,
-  url: `https://www.zhihu.com/question/${x.target.card_id.split("_")[1]}`,
+  url: `https://www.zhihu.com/question/${x.card_id.split("_")[1]}`,
 }));
 
 const yyyyMMdd = format(new Date(), "yyyy-MM-dd");
