@@ -5,6 +5,9 @@ on:
     - cron: "0 8 * * *"  # 北京时间每天 8:00（UTC 0:00）
   workflow_dispatch:     # 手动触发选项
 
+permissions:
+  contents: write        # 明确指定写入权限
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,21 +17,33 @@ jobs:
     steps:
       - name: Clone repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 获取完整历史以确保git pull正常工作
+          token: ${{ secrets.GITHUB_TOKEN }}  # 明确指定token
 
-      - name: Install Deno
+      - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
           deno-version: "1.40.x"
 
+      - name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/deno
+          key: ${{ runner.os }}-deno-${{ hashFiles('**/import_map.json') }}
+          restore-keys: ${{ runner.os }}-deno-
+
       - name: Run Deno Script
         run: |
-          git config --local user.email "bot@github.com"
-          git config --local user.name "bot"
-          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          git pull --rebase
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           
-          # 执行 Deno 脚本
-          deno run --unstable --allow-net --allow-read --allow-write --import-map=import_map.json mod.ts
+          # 执行 Deno 脚本，替换--unstable为具体的unstable标志
+          # 根据你的需求选择适当的unstable标志，以下是常见选项
+          deno run --allow-net --allow-read --allow-write \
+            --unstable-kv --unstable-http --unstable-fs \
+            --import-map=import_map.json mod.ts
+            
           deno fmt
           
           # 仅当有变更时提交
